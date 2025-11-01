@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products Management</title>
+<style>
+  table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+</style>
+</head>
+<body>
+<h1>Products</h1>
+<input type="text" id="search" placeholder="Search Products">
+<button onclick="loadProducts()">Search</button>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Category</th>
+      <th>Price</th>
+      <th>Location</th>
+      <th>Description</th>
+      <th>Edit</th>
+    </tr>
+  </thead>
+  <tbody id="productsTable"></tbody>
+</table>
+
+<div id="editForm" style="display:none;">
+  <h2>Edit Product</h2>
+  <input id="editId" type="hidden">
+  <label>Name:</label><input id="editName"><br>
+  <label>Category:</label><input id="editCategory"><br>
+  <label>Price:</label><input id="editPrice"><br>
+  <label>Location:</label><input id="editLocation"><br>
+  <label>Description:</label><input id="editDescription"><br>
+  <button onclick="saveProduct()">Save</button>
+</div>
+
+<script>
+async function loadProducts() {
+  const search = document.getElementById('search').value;
+  const res = await fetch(`/api/products?search=${search}`);
+  const data = await res.json();
+  const tbody = document.getElementById('productsTable');
+  tbody.innerHTML = '';
+  data.data.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.id}</td>
+      <td>${p.name}</td>
+      <td>${p.category}</td>
+      <td>${p.price}</td>
+      <td>${p.location}</td>
+      <td>${p.description}</td>
+      <td><button onclick="editProduct(${p.id})">Edit</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function editProduct(id) {
+  const res = await fetch(`/api/products/${id}`);
+  const data = await res.json();
+  const p = data.data;
+  document.getElementById('editId').value = p.id;
+  document.getElementById('editName').value = p.name;
+  document.getElementById('editCategory').value = p.category;
+  document.getElementById('editPrice').value = p.price;
+  document.getElementById('editLocation').value = p.location;
+  document.getElementById('editDescription').value = p.description;
+  document.getElementById('editForm').style.display = 'block';
+}
+
+async function saveProduct() {
+  const id = document.getElementById('editId').value;
+  const body = {
+    name: document.getElementById('editName').value,
+    category: document.getElementById('editCategory').value,
+    price: document.getElementById('editPrice').value,
+    location: document.getElementById('editLocation').value,
+    description: document.getElementById('editDescription').value
+  };
+  await fetch(`/api/products/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  alert('Updated successfully!');
+  document.getElementById('editForm').style.display = 'none';
+  loadProducts();
+}
+
+loadProducts()
+</script>
+</body>
+</html>

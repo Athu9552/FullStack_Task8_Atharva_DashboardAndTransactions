@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buyers Management</title>
+<style>
+  table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+</style>
+</head>
+<body>
+<h1>Buyers</h1>
+<input type="text" id="search" placeholder="Search Buyers">
+<button onclick="loadBuyers()">Search</button>
+<table>
+  <thead>
+    <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Location</th><th>Edit</th></tr>
+  </thead>
+  <tbody id="buyersTable"></tbody>
+</table>
+
+<div id="editForm" style="display:none;">
+  <h2>Edit Buyer</h2>
+  <input id="editId" type="hidden">
+  <label>Name:</label><input id="editName"><br>
+  <label>Email:</label><input id="editEmail"><br>
+  <label>Phone:</label><input id="editPhone"><br>
+  <label>Location:</label><input id="editLocation"><br>
+  <label>Notes:</label><input id="editNotes"><br>
+  <button onclick="saveBuyer()">Save</button>
+</div>
+
+<script>
+async function loadBuyers() {
+  const search = document.getElementById('search').value;
+  const res = await fetch(`/api/buyers?search=${search}`);
+  const data = await res.json();
+  const tbody = document.getElementById('buyersTable');
+  tbody.innerHTML = '';
+  data.data.forEach(b => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${b.id}</td>
+      <td>${b.name}</td>
+      <td>${b.email}</td>
+      <td>${b.phone}</td>
+      <td>${b.location}</td>
+      <td><button onclick="editBuyer(${b.id})">Edit</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function editBuyer(id) {
+  const res = await fetch(`/api/buyers/${id}`);
+  const data = await res.json();
+  const b = data.data;
+  document.getElementById('editId').value = b.id;
+  document.getElementById('editName').value = b.name;
+  document.getElementById('editEmail').value = b.email;
+  document.getElementById('editPhone').value = b.phone;
+  document.getElementById('editLocation').value = b.location;
+  document.getElementById('editNotes').value = b.notes;
+  document.getElementById('editForm').style.display = 'block';
+}
+
+async function saveBuyer() {
+  const id = document.getElementById('editId').value;
+  const body = {
+    name: document.getElementById('editName').value,
+    email: document.getElementById('editEmail').value,
+    phone: document.getElementById('editPhone').value,
+    location: document.getElementById('editLocation').value,
+    notes: document.getElementById('editNotes').value
+  };
+  await fetch(`/api/buyers/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  alert('Updated successfully!');
+  document.getElementById('editForm').style.display = 'none';
+  loadBuyers();
+}
+
+loadBuyers();
+</script>
+</body>
+</html>

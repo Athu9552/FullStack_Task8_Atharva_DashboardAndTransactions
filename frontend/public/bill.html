@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generate Bill</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 40px;
+      color: #333;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: auto;
+    }
+    h1, h2 { text-align: center; color: #007bff; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th { background-color: #007bff; color: white; }
+    .summary { text-align: right; margin-top: 20px; font-size: 1.1em; }
+    .buttons { text-align: center; margin-top: 20px; }
+    button {
+      margin: 5px; padding: 10px 15px; border: none;
+      border-radius: 5px; background-color: #007bff;
+      color: white; cursor: pointer;
+    }
+    button:hover { opacity: 0.9; }
+
+    /* Dark mode */
+    .dark-mode { background-color: #121212; color: #f8f9fa; }
+    .dark-mode .container { background: #1e1e1e; }
+    .dark-mode th { background-color: #444; }
+    .dark-mode td, .dark-mode th { border-color: #666; }
+  </style>
+</head>
+<body onload="loadBill()">
+  <div class="container" id="billArea">
+    <h2>Loading Bill...</h2>
+  </div>
+
+  <div class="buttons">
+    <button onclick="window.print()">🖨️ Print Bill</button>
+    <button onclick="downloadPDF()">💾 Download PDF</button>
+    <button onclick="toggleMode()">🌙 Toggle Dark Mode</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    async function loadBill() {
+      // Get buyer ID from URL, e.g., bill.html?buyer=1
+      const params = new URLSearchParams(window.location.search);
+      const buyerId = params.get("buyer") || 1;
+
+      const res = await fetch(`http://localhost:3000/api/bill/${buyerId}`);
+      const data = await res.json();
+
+      if (!data.ok) return document.getElementById("billArea").innerHTML = "<h3>Failed to load bill.</h3>";
+
+      const { buyer, products, transaction } = data;
+
+      let subtotal = 0;
+      products.forEach(p => subtotal += Number(p.price));
+
+      document.getElementById("billArea").innerHTML = `
+        <header>
+          <h1>🧾 Company Name</h1>
+          <p>Address: Pune, Maharashtra</p>
+          <p>Contact: +91 9876543210 | Email: info@company.com</p>
+          <hr/>
+        </header>
+
+        <section class="buyer">
+          <h2>Buyer Details</h2>
+          <p><strong>Name:</strong> ${buyer.name}</p>
+          <p><strong>Address:</strong> ${buyer.location}</p>
+          <p><strong>Contact:</strong> ${buyer.phone}</p>
+          <p><strong>Email:</strong> ${buyer.email}</p>
+        </section>
+
+        <section>
+          <h2>Product Details</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Product Name</th>
+                <th>Qty</th>
+                <th>Unit Price (₹)</th>
+                <th>Total (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${products.map(p => `
+                <tr>
+                  <td>${p.name}</td>
+                  <td>1</td>
+                  <td>${p.price}</td>
+                  <td>${p.price}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </section>
+
+        <div class="summary">
+          <p><strong>Subtotal:</strong> ₹${subtotal}</p>
+          <p><strong>Total Amount Due:</strong> ₹${subtotal}</p>
+        </div>
+
+        <footer>
+          <hr/>
+          <p><strong>Transaction ID:</strong> ${transaction.id}</p>
+          <p><strong>Date:</strong> ${transaction.date}</p>
+          <p><strong>Payment Method:</strong> ${transaction.payment}</p>
+        </footer>
+      `;
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('billArea');
+      html2pdf().from(element).save('Bill.pdf');
+    }
+
+    function toggleMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+  </script>
+</body>
+</html>
