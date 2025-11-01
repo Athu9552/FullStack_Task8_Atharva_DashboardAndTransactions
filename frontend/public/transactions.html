@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Transactions</title>
+  <style>
+    body { font-family:Arial; padding:20px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { border:1px solid #ccc; padding:8px; text-align:left; }
+    th { background:#333; color:white; }
+    input { margin-bottom:10px; padding:5px; width:250px; }
+  </style>
+</head>
+<body>
+  <h2>💳 Transactions</h2>
+  <input type="text" id="search" placeholder="Search by buyer/product/ID...">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Buyer</th>
+        <th>Product</th>
+        <th>Date</th>
+        <th>Qty</th>
+        <th>Total</th>
+        <th>Payment</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <script>
+    async function load(q = "") {
+      const res = await fetch(`/api/view/transactions?search=${q}`);
+      const data = await res.json();
+      document.getElementById("rows").innerHTML = data.data.map(t => `
+        <tr>
+          <td>${t.id}</td>
+          <td>${t.buyer_name}</td>
+          <td>${t.product_name}</td>
+          <td>${new Date(t.date).toLocaleDateString()}</td>
+          <td>${t.quantity}</td>
+          <td>₹${t.total}</td>
+          <td>${t.payment_method}</td>
+          <td>${t.status}</td>
+        </tr>
+      `).join("");
+    }
+
+    document.getElementById("search").addEventListener("input", e => load(e.target.value));
+    load();
+  </script>
+</body>
+</html>
